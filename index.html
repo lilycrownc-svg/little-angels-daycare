@@ -39,6 +39,12 @@
     }
     button:disabled { opacity: .5; }
     .hidden { display: none; }
+    .child {
+      border-top: 1px solid #eee;
+      padding: 14px 0;
+    }
+    .child h3 { margin-bottom: 6px; }
+    .status { font-size: 14px; }
     #message { overflow-wrap: anywhere; }
   </style>
 </head>
@@ -68,21 +74,32 @@
       <p>Tu espacio de Little Angels Daycare.</p>
       <button id="logout">Cerrar sesión</button>
     </div>
+
     <div class="card">
       <h2>Asistencia</h2>
-      <p>Entradas y salidas de los niños.</p>
-      <button disabled>Próximamente</button>
+      <p>Registra las entradas y salidas reales.</p>
+      <button id="openAttendance">Abrir asistencia</button>
     </div>
+
     <div class="card">
       <h2>Revisiones de siesta</h2>
       <p>Registrar revisiones reales de seguridad.</p>
       <button disabled>Próximamente</button>
     </div>
+
     <div class="card">
       <h2>Reportes diarios</h2>
       <p>Comidas, pañales y actividades.</p>
       <button disabled>Próximamente</button>
     </div>
+  </section>
+
+  <section id="attendance" class="card hidden">
+    <h2>Asistencia de hoy 💗</h2>
+    <p id="attendanceDate"></p>
+    <div id="childrenList"></div>
+    <button id="refreshAttendance">Actualizar</button>
+    <button id="backDashboard">Volver al inicio</button>
   </section>
 
   <p id="message" role="status"></p>
@@ -99,12 +116,30 @@
 
   const login = document.getElementById("login");
   const dashboard = document.getElementById("dashboard");
+  const attendance = document.getElementById("attendance");
   const message = document.getElementById("message");
   const loginButton = document.getElementById("loginButton");
+  const childrenList = document.getElementById("childrenList");
 
   function showLoggedOut() {
     login.classList.remove("hidden");
     dashboard.classList.add("hidden");
+    attendance.classList.add("hidden");
+  }
+
+  function localDate(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatTime(value) {
+    if (!value) return "Sin registrar";
+    return new Date(value).toLocaleTimeString("es-US", {
+      hour: "numeric",
+      minute: "2-digit"
+    });
   }
 
   async function checkAccess(user) {
@@ -129,7 +164,141 @@
 
     login.classList.add("hidden");
     dashboard.classList.remove("hidden");
+    attendance.classList.add("hidden");
     message.textContent = "";
+  }
+
+  async function loadAttendance() {
+    childrenList.textContent = "Cargando...";
+    message.textContent = "";
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    document.getElementById("attendanceDate").textContent =
+      new Date().toLocaleDateString("es-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+
+    const { data: children, error: childrenError } =
+      await supabase
+        .from("daycare_children")
+        .select("id,name")
+        .eq("active", true)
+        .order("name");
+
+    if (childrenError) {
+      childrenList.textContent = "No se pudieron cargar los niños.";
+      message.textContent = childrenError.message;
+      return;
+    }
+
+    const { data: records, error: recordsError } =
+      await supabase
+        .from("daycare_attendance")
+        .select("id,child_id,check_in,check_out")
+        .gte("check_in", start.toISOString())
+        .lt("check_in", end.toISOString())
+        .order("check_in", { ascending: false });
+
+    if (recordsError) {
+      childrenList.textContent = "No se pudo cargar la asistencia.";
+      message.textContent = recordsError.message;
+      return;
+    }
+
+    childrenList.replaceChildren();
+
+    if (!children.length) {
+      childrenList.textContent = "Todavía no hay niños registrados.";
+      return;
+    }
+
+    for (const child of children) {
+      const record = records.find(
+        r => r.child_id === child.id
+      );
+
+      const container = document.createElement("div");
+      container.className = "child";
+
+      const title = document.createElement("h3");
+      title.textContent = child.name;
+
+      const status = document.createElement("p");
+      status.className = "status";
+
+      if (!record) {
+        status.textContent = "Sin entrada registrada hoy.";
+      } else {
+        status.textContent =
+          `Entrada: ${formatTime(record.check_in)} | ` +
+          `Salida: ${formatTime(record.check_out)}`;
+      }
+
+      const button = document.createElement("button");
+
+      if (!record) {
+        button.textContent = "Registrar entrada";
+        button.addEventListener("click", () =>
+          saveAttendance(child.id, null, button)
+        );
+      } else if (!record.check_out) {
+        button.textContent = "Registrar salida";
+        button.addEventListener("click", () =>
+          saveAttendance(child.id, record.id, button)
+        );
+      } else {
+        button.textContent = "Asistencia completada";
+        button.disabled = true;
+      }
+
+      container.append(title, status, button);
+      childrenList.appendChild(container);
+    }
+  }
+
+  async function saveAttendance(childId, recordId, button) {
+    button.disabled = true;
+    message.textContent = "Guardando en la nube...";
+
+    let error;
+
+    if (recordId) {
+      ({ error } = await supabase
+        .from("daycare_attendance")
+        .update({ check_out: new Date().toISOString() })
+        .eq("id", recordId)
+        .eq("child_id", childId)
+        .is("check_out", null)
+        .select("id")
+        .single());
+    } else {
+      ({ error } = await supabase
+        .from("daycare_attendance")
+        .insert({
+          child_id: childId,
+          check_in: new Date().toISOString()
+        })
+        .select("id")
+        .single());
+    }
+
+    if (error) {
+      button.disabled = false;
+      message.textContent = "No se pudo guardar: " + error.message;
+      return;
+    }
+
+    await loadAttendance();
+    if (!message.textContent) {
+      message.textContent = "Registro guardado en la nube. 💗";
+    }
   }
 
   document.getElementById("loginForm")
@@ -160,6 +329,23 @@
       }
     });
 
+  document.getElementById("openAttendance")
+    .addEventListener("click", async () => {
+      dashboard.classList.add("hidden");
+      attendance.classList.remove("hidden");
+      await loadAttendance();
+    });
+
+  document.getElementById("refreshAttendance")
+    .addEventListener("click", loadAttendance);
+
+  document.getElementById("backDashboard")
+    .addEventListener("click", () => {
+      attendance.classList.add("hidden");
+      dashboard.classList.remove("hidden");
+      message.textContent = "";
+    });
+
   document.getElementById("logout")
     .addEventListener("click", async () => {
       await supabase.auth.signOut();
@@ -174,3 +360,4 @@
 </script>
 </body>
 </html>
+
