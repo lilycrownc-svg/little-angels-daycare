@@ -1,65 +1,176 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Little Angels Daycare app</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Little Angels Daycare</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: Arial, sans-serif;
       background: #fff7f9;
+      color: #493a44;
       margin: 0;
       padding: 24px;
-      color: #493a44;
     }
-    .app {
-      max-width: 520px;
-      margin: auto;
-    }
+    main { max-width: 520px; margin: auto; }
     h1 { color: #b96b91; }
     .card {
       background: white;
-      padding: 20px;
+      padding: 22px;
       border-radius: 16px;
-      margin: 14px 0;
+      margin: 16px 0;
       box-shadow: 0 3px 12px #00000010;
     }
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    input { border: 1px solid #ddd; }
     button {
       background: #b96b91;
       color: white;
-      border: 0;
-      border-radius: 10px;
-      padding: 12px;
-      width: 100%;
-      font-size: 16px;
+      border: none;
+      cursor: pointer;
     }
+    button:disabled { opacity: .5; }
+    .hidden { display: none; }
+    #message { overflow-wrap: anywhere; }
   </style>
 </head>
 <body>
-  <main class="app">
-    <h1>Little Angels Daycare</h1>
-    <p>Que el amor sea tu guía</p>
+<main>
+  <h1>Little Angels Daycare 💗</h1>
+  <p>Que el amor sea tu guía</p>
 
+  <section id="login" class="card">
+    <h2>Acceso privado</h2>
+    <form id="loginForm">
+      <input id="email" type="email"
+        placeholder="Correo electrónico"
+        autocomplete="username" required>
+      <input id="password" type="password"
+        placeholder="Contraseña"
+        autocomplete="current-password" required>
+      <button id="loginButton" type="submit">
+        Iniciar sesión
+      </button>
+    </form>
+  </section>
+
+  <section id="dashboard" class="hidden">
     <div class="card">
-      <h2>Attendance</h2>
-      <p>Daily check-in and check-out</p>
-      <button disabled>Coming soon</button>
+      <h2>Bienvenida 💗</h2>
+      <p>Tu espacio de Little Angels Daycare.</p>
+      <button id="logout">Cerrar sesión</button>
     </div>
-
     <div class="card">
-      <h2>Nap Checks</h2>
-      <p>Record actual sleep safety checks</p>
-      <button disabled>Coming soon</button>
+      <h2>Asistencia</h2>
+      <p>Entradas y salidas de los niños.</p>
+      <button disabled>Próximamente</button>
     </div>
-
     <div class="card">
-      <h2>Daily Reports</h2>
-      <p>Meals, diapers and activities</p>
-      <button disabled>Coming soon</button>
+      <h2>Revisiones de siesta</h2>
+      <p>Registrar revisiones reales de seguridad.</p>
+      <button disabled>Próximamente</button>
     </div>
+    <div class="card">
+      <h2>Reportes diarios</h2>
+      <p>Comidas, pañales y actividades.</p>
+      <button disabled>Próximamente</button>
+    </div>
+  </section>
 
-    <p>Private access and cloud storage will be added next.</p>
-  </main>
+  <p id="message" role="status"></p>
+</main>
+
+<script type="module">
+  import { createClient } from
+    "https://esm.sh/@supabase/supabase-js@2";
+
+  const supabase = createClient(
+    "https://sxadwskxnfkucrzixvvp.supabase.co",
+    "sb_publishable_nBZCY0fF6XdJl9I1Y6Mrqg_upzN2WIB"
+  );
+
+  const login = document.getElementById("login");
+  const dashboard = document.getElementById("dashboard");
+  const message = document.getElementById("message");
+  const loginButton = document.getElementById("loginButton");
+
+  function showLoggedOut() {
+    login.classList.remove("hidden");
+    dashboard.classList.add("hidden");
+  }
+
+  async function checkAccess(user) {
+    if (!user) {
+      showLoggedOut();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("daycare_members")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error || !data) {
+      await supabase.auth.signOut();
+      showLoggedOut();
+      message.textContent =
+        "Esta cuenta no tiene acceso autorizado.";
+      return;
+    }
+
+    login.classList.add("hidden");
+    dashboard.classList.remove("hidden");
+    message.textContent = "";
+  }
+
+  document.getElementById("loginForm")
+    .addEventListener("submit", async (event) => {
+      event.preventDefault();
+      loginButton.disabled = true;
+      message.textContent = "Verificando acceso...";
+
+      const email = document.getElementById("email").value;
+      const password =
+        document.getElementById("password").value;
+
+      try {
+        const { data, error } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+
+        if (error) throw error;
+        await checkAccess(data.user);
+      } catch (error) {
+        showLoggedOut();
+        message.textContent =
+          "No se pudo iniciar sesión. Revisa tus datos.";
+      } finally {
+        loginButton.disabled = false;
+      }
+    });
+
+  document.getElementById("logout")
+    .addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      showLoggedOut();
+      message.textContent = "Sesión cerrada.";
+    });
+
+  const { data: { session } } =
+    await supabase.auth.getSession();
+
+  await checkAccess(session?.user);
+</script>
 </body>
 </html>
