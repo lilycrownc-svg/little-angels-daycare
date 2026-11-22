@@ -7,50 +7,21 @@
 <title>Little Angels Daycare</title>
 <style>
 * { box-sizing: border-box; }
-body {
-  font-family: Arial, sans-serif;
-  background: #fff7f9;
-  color: #493a44;
-  margin: 0;
-  padding: 20px;
-}
-main { max-width: 540px; margin: auto; }
-h1 { color: #b96b91; }
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 16px;
-  margin: 16px 0;
-  box-shadow: 0 3px 12px #00000010;
-}
-input, select, button {
-  width: 100%;
-  padding: 13px;
-  margin: 7px 0;
-  border-radius: 10px;
-  font-size: 16px;
-}
-input, select { border: 1px solid #ddd; }
-button {
-  background: #b96b91;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-button:disabled { opacity: .5; }
-.secondary { background: #8b7985; }
-.hidden { display: none; }
-.child {
-  padding: 14px 0;
-  border-top: 1px solid #eee;
-}
-.small { font-size: 14px; }
-label {
-  display: block;
-  margin-top: 10px;
-  font-weight: bold;
-}
-#message { overflow-wrap: anywhere; }
+body { font-family: Arial, sans-serif; background:#fff7f9; color:#493a44; margin:0; padding:20px; }
+main { max-width:540px; margin:auto; }
+h1 { color:#b96b91; }
+.card { background:white; padding:20px; border-radius:16px; margin:16px 0; box-shadow:0 3px 12px #00000010; }
+input,select,button,textarea { width:100%; padding:13px; margin:7px 0; border-radius:10px; font-size:16px; }
+input,select,textarea { border:1px solid #ddd; }
+button { background:#b96b91; color:white; border:0; cursor:pointer; }
+button:disabled { opacity:.5; }
+.secondary { background:#8b7985; }
+.hidden { display:none; }
+.child { padding:14px 0; border-top:1px solid #eee; }
+.small { font-size:14px; }
+label { display:block; margin-top:10px; font-weight:bold; }
+#message { overflow-wrap:anywhere; white-space:pre-wrap; }
+.hint { color:#766771; font-size:13px; }
 </style>
 </head>
 <body>
@@ -59,550 +30,614 @@ label {
 <p>Que el amor sea tu guía</p>
 
 <section id="login" class="card">
-  <h2>Acceso privado</h2>
-  <form id="loginForm">
-    <input id="email" type="email"
-      placeholder="Correo electrónico"
-      autocomplete="username" required>
-    <input id="password" type="password"
-      placeholder="Contraseña"
-      autocomplete="current-password" required>
-    <button id="loginButton" type="submit">
-      Iniciar sesión
-    </button>
-  </form>
+<h2>Acceso privado</h2>
+<form id="loginForm">
+<input id="email" type="email" placeholder="Correo electrónico" autocomplete="username" required>
+<input id="password" type="password" placeholder="Contraseña" autocomplete="current-password" required>
+<button id="loginButton" type="submit">Iniciar sesión</button>
+</form>
 </section>
 
 <section id="dashboard" class="hidden">
-  <div class="card">
-    <h2>Bienvenida 💗</h2>
-    <p>Tu espacio de Little Angels Daycare.</p>
-    <button id="logout">Cerrar sesión</button>
-  </div>
-
-  <div class="card">
-    <h2>Asistencia</h2>
-    <p>Entradas, salidas e historial.</p>
-    <button id="openAttendance">Abrir asistencia</button>
-  </div>
-
-  <div class="card">
-    <h2>Revisiones de siesta</h2>
-    <p>Registrar revisiones reales de seguridad.</p>
-    <button disabled>Próximamente</button>
-  </div>
-
-  <div class="card">
-    <h2>Reportes diarios</h2>
-    <p>Comidas, pañales y actividades.</p>
-    <button disabled>Próximamente</button>
-  </div>
+<div class="card">
+<h2>Bienvenida 💗</h2>
+<p>Tu espacio de Little Angels Daycare.</p>
+<button id="logout">Cerrar sesión</button>
+</div>
+<div class="card">
+<h2>Asistencia</h2>
+<p>Entradas, salidas e historial.</p>
+<button id="openAttendance">Abrir asistencia</button>
+</div>
+<div class="card">
+<h2>Revisiones de siesta</h2>
+<p>Revisiones reales de seguridad e historial.</p>
+<button id="openNaps">Abrir revisiones de siesta</button>
+</div>
+<div class="card">
+<h2>Reportes diarios</h2>
+<p>Comidas, pañales y actividades.</p>
+<button disabled>Próximamente</button>
+</div>
 </section>
 
 <section id="attendance" class="hidden">
-  <div class="card">
-    <h2>Asistencia de hoy 💗</h2>
-    <p id="attendanceDate"></p>
-    <div id="childrenList"></div>
-    <button id="refreshAttendance">Actualizar</button>
-  </div>
+<div class="card">
+<h2>Asistencia de hoy 💗</h2>
+<p id="attendanceDate"></p>
+<div id="childrenList"></div>
+<button id="refreshAttendance">Actualizar</button>
+</div>
+<div class="card">
+<h2>Registro manual</h2>
+<p class="small">Utiliza las horas reales de asistencia.</p>
+<form id="manualForm">
+<label for="manualChild">Niño</label>
+<select id="manualChild" required></select>
+<label for="manualDate">Fecha</label>
+<input id="manualDate" type="date" required>
+<label for="manualIn">Hora de entrada</label>
+<input id="manualIn" type="time" required>
+<label for="manualOut">Hora de salida (opcional)</label>
+<input id="manualOut" type="time">
+<button id="manualSave" type="submit">Guardar registro manual</button>
+</form>
+</div>
+<div class="card">
+<h2>Historial de asistencia</h2>
+<label for="historyDate">Seleccionar fecha</label>
+<input id="historyDate" type="date">
+<button id="loadHistory">Consultar historial</button>
+<div id="historyList"></div>
+</div>
+<button id="backDashboard" class="secondary">Volver al inicio</button>
+</section>
 
-  <div class="card">
-    <h2>Registro manual</h2>
-    <p class="small">
-      Utiliza las horas reales de asistencia.
-    </p>
-    <form id="manualForm">
-      <label for="manualChild">Niño</label>
-      <select id="manualChild" required></select>
+<section id="naps" class="hidden">
+<div class="card">
+<h2>Revisiones de siesta 💗</h2>
+<p class="hint">Registra únicamente revisiones realmente realizadas. Esta herramienta no sustituye la supervisión de seguridad.</p>
+<form id="napForm">
+<label for="napChild">Niño</label>
+<select id="napChild" required></select>
+<label for="napPosition">Posición observada</label>
+<select id="napPosition" required>
+<option value="">Seleccionar</option>
+<option>Boca arriba</option>
+<option>De lado</option>
+<option>Boca abajo</option>
+<option>Otra / no determinada</option>
+</select>
+<label for="napBreathing">Respiración observada</label>
+<select id="napBreathing" required>
+<option value="">Seleccionar</option>
+<option>Normal</option>
+<option>Requiere atención</option>
+<option>No determinada</option>
+</select>
+<label for="napNotes">Observaciones (opcional)</label>
+<textarea id="napNotes" rows="2" maxlength="1000" placeholder="Solo observaciones reales"></textarea>
+<button id="napAuto" type="submit">Guardar revisión con hora actual</button>
+</form>
+</div>
 
-      <label for="manualDate">Fecha</label>
-      <input id="manualDate" type="date" required>
+<div class="card">
+<h2>Registro manual de revisión</h2>
+<p class="small">Solo para revisiones reales que no anotaste en el momento. Se identificarán como manuales.</p>
+<form id="napManualForm">
+<label for="napManualChild">Niño</label>
+<select id="napManualChild" required></select>
+<label for="napManualDate">Fecha</label>
+<input id="napManualDate" type="date" required>
+<label for="napManualTime">Hora real de la revisión</label>
+<input id="napManualTime" type="time" required>
+<label for="napManualPosition">Posición observada</label>
+<select id="napManualPosition" required>
+<option value="">Seleccionar</option>
+<option>Boca arriba</option>
+<option>De lado</option>
+<option>Boca abajo</option>
+<option>Otra / no determinada</option>
+</select>
+<label for="napManualBreathing">Respiración observada</label>
+<select id="napManualBreathing" required>
+<option value="">Seleccionar</option>
+<option>Normal</option>
+<option>Requiere atención</option>
+<option>No determinada</option>
+</select>
+<label for="napManualNotes">Observaciones (opcional)</label>
+<textarea id="napManualNotes" rows="2" maxlength="1000"></textarea>
+<button id="napManualSave" type="submit">Guardar revisión manual</button>
+</form>
+</div>
 
-      <label for="manualIn">Hora de entrada</label>
-      <input id="manualIn" type="time" required>
-
-      <label for="manualOut">Hora de salida (opcional)</label>
-      <input id="manualOut" type="time">
-
-      <button id="manualSave" type="submit">
-        Guardar registro manual
-      </button>
-    </form>
-  </div>
-
-  <div class="card">
-    <h2>Historial de asistencia</h2>
-    <label for="historyDate">Seleccionar fecha</label>
-    <input id="historyDate" type="date">
-    <button id="loadHistory">Consultar historial</button>
-    <div id="historyList"></div>
-  </div>
-
-  <button id="backDashboard" class="secondary">
-    Volver al inicio
-  </button>
+<div class="card">
+<h2>Historial de revisiones</h2>
+<label for="napHistoryDate">Fecha</label>
+<input id="napHistoryDate" type="date">
+<label for="napHistoryChild">Niño</label>
+<select id="napHistoryChild">
+<option value="">Todos los niños</option>
+</select>
+<button id="loadNapHistory">Consultar revisiones</button>
+<div id="napHistoryList"></div>
+</div>
+<button id="backFromNaps" class="secondary">Volver al inicio</button>
 </section>
 
 <p id="message" role="status"></p>
 </main>
 
 <script type="module">
-import { createClient } from
-  "https://esm.sh/@supabase/supabase-js@2";
+import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
 
-const supabase = createClient(
-  "https://sxadwskxnfkucrzixvvp.supabase.co",
-  "sb_publishable_nBZCY0fF6XdJl9I1Y6Mrqg_upzN2WIB"
+const supabase=createClient(
+"https://sxadwskxnfkucrzixvvp.supabase.co",
+"sb_publishable_nBZCY0fF6XdJl9I1Y6Mrqg_upzN2WIB"
 );
 
-const $ = id => document.getElementById(id);
-let childrenCache = [];
+const $=id=>document.getElementById(id);
+let childrenCache=[];
+const setMessage=text=>{$("message").textContent=text;};
 
-function showLoggedOut() {
-  $("login").classList.remove("hidden");
-  $("dashboard").classList.add("hidden");
-  $("attendance").classList.add("hidden");
+function showView(view){
+for(const id of ["login","dashboard","attendance","naps"])
+$(id).classList.toggle("hidden",id!==view);
 }
 
-function localDate(date = new Date()) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+function localDate(date=new Date()){
+const y=date.getFullYear();
+const m=String(date.getMonth()+1).padStart(2,"0");
+const d=String(date.getDate()).padStart(2,"0");
+return `${y}-${m}-${d}`;
 }
 
-function formatTime(value) {
-  if (!value) return "Sin registrar";
-  return new Date(value).toLocaleTimeString("es-US", {
-    hour: "numeric",
-    minute: "2-digit"
-  });
+function formatTime(value){
+return value?new Date(value).toLocaleTimeString("es-US",{hour:"numeric",minute:"2-digit"}):"Sin registrar";
 }
 
-function dateRange(day) {
-  const start = new Date(day + "T00:00:00");
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-  return [start.toISOString(), end.toISOString()];
+function dateRange(day){
+const start=new Date(day+"T00:00:00");
+const end=new Date(start);
+end.setDate(end.getDate()+1);
+return [start.toISOString(),end.toISOString()];
 }
 
-function toISO(day, time) {
-  return new Date(`${day}T${time}:00`).toISOString();
+function toISO(day,time){
+return new Date(`${day}T${time}:00`).toISOString();
 }
 
-function timeForInput(value) {
-  if (!value) return "";
-  const d = new Date(value);
-  const h = String(d.getHours()).padStart(2, "0");
-  const m = String(d.getMinutes()).padStart(2, "0");
-  return `${h}:${m}`;
+function timeForInput(value){
+if(!value)return "";
+const d=new Date(value);
+return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
 }
 
-async function checkAccess(user) {
-  if (!user) {
-    showLoggedOut();
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from("daycare_members")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (error || !data) {
-    await supabase.auth.signOut();
-    showLoggedOut();
-    $("message").textContent =
-      "Esta cuenta no tiene acceso autorizado.";
-    return;
-  }
-
-  $("login").classList.add("hidden");
-  $("dashboard").classList.remove("hidden");
-  $("attendance").classList.add("hidden");
-  $("message").textContent = "";
+function safePast(iso){
+return Number.isFinite(Date.parse(iso))&&new Date(iso)<=new Date();
 }
 
-async function getChildren() {
-  const { data, error } = await supabase
-    .from("daycare_children")
-    .select("id,name")
-    .eq("active", true)
-    .order("name");
-
-  if (error) throw error;
-  childrenCache = data || [];
-
-  const select = $("manualChild");
-  select.replaceChildren();
-
-  for (const child of childrenCache) {
-    const option = document.createElement("option");
-    option.value = child.id;
-    option.textContent = child.name;
-    select.appendChild(option);
-  }
+async function checkAccess(user){
+if(!user){showView("login");return;}
+const {data,error}=await supabase.from("daycare_members")
+.select("user_id").eq("user_id",user.id).maybeSingle();
+if(error||!data){
+await supabase.auth.signOut();
+showView("login");
+setMessage("Esta cuenta no tiene acceso autorizado.");
+return;
+}
+showView("dashboard");
+setMessage("");
 }
 
-async function getRecords(day) {
-  const [start, end] = dateRange(day);
-  const { data, error } = await supabase
-    .from("daycare_attendance")
-    .select("id,child_id,check_in,check_out,entry_method")
-    .gte("check_in", start)
-    .lt("check_in", end)
-    .order("check_in", { ascending: false });
+async function getChildren(){
+const {data,error}=await supabase.from("daycare_children")
+.select("id,name").eq("active",true).order("name");
+if(error)throw error;
+childrenCache=data||[];
 
-  if (error) throw error;
-  return data || [];
+for(const id of ["manualChild","napChild","napManualChild","napHistoryChild"]){
+const select=$(id),old=select.value;
+select.replaceChildren();
+if(id==="napHistoryChild"){
+const all=document.createElement("option");
+all.value="";
+all.textContent="Todos los niños";
+select.appendChild(all);
+}
+for(const child of childrenCache){
+const option=document.createElement("option");
+option.value=child.id;
+option.textContent=child.name;
+select.appendChild(option);
+}
+if([...select.options].some(o=>o.value===old))select.value=old;
+}
 }
 
-async function loadAttendance() {
-  $("childrenList").textContent = "Cargando...";
-  $("attendanceDate").textContent =
-    new Date().toLocaleDateString("es-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric"
-    });
-
-  try {
-    await getChildren();
-    const records = await getRecords(localDate());
-    const list = $("childrenList");
-    list.replaceChildren();
-
-    for (const child of childrenCache) {
-      const record = records.find(
-        r => r.child_id === child.id
-      );
-
-      const box = document.createElement("div");
-      box.className = "child";
-
-      const name = document.createElement("h3");
-      name.textContent = child.name;
-
-      const status = document.createElement("p");
-      status.className = "small";
-      status.textContent = record
-        ? `Entrada: ${formatTime(record.check_in)} | Salida: ${formatTime(record.check_out)}`
-        : "Sin entrada registrada hoy.";
-
-      const button = document.createElement("button");
-
-      if (!record) {
-        button.textContent = "Registrar entrada";
-        button.onclick = () =>
-          saveAutomatic(child.id, null, button);
-      } else if (!record.check_out) {
-        button.textContent = "Registrar salida";
-        button.onclick = () =>
-          saveAutomatic(child.id, record.id, button);
-      } else {
-        button.textContent = "Asistencia completada";
-        button.disabled = true;
-      }
-
-      box.append(name, status, button);
-      list.appendChild(box);
-    }
-  } catch (error) {
-    $("childrenList").textContent =
-      "No se pudo cargar la asistencia.";
-    $("message").textContent = error.message;
-  }
+async function getRecords(day){
+const [start,end]=dateRange(day);
+const {data,error}=await supabase.from("daycare_attendance")
+.select("id,child_id,check_in,check_out,entry_method")
+.gte("check_in",start).lt("check_in",end)
+.order("check_in",{ascending:false});
+if(error)throw error;
+return data||[];
 }
 
-async function saveAutomatic(childId, recordId, button) {
-  button.disabled = true;
-  $("message").textContent = "Guardando...";
+async function loadAttendance(){
+$("childrenList").textContent="Cargando...";
+$("attendanceDate").textContent=new Date().toLocaleDateString("es-US",{
+weekday:"long",year:"numeric",month:"long",day:"numeric"
+});
+try{
+await getChildren();
+const records=await getRecords(localDate());
+const list=$("childrenList");
+list.replaceChildren();
 
-  try {
-    let result;
+for(const child of childrenCache){
+const record=records.find(r=>r.child_id===child.id);
+const box=document.createElement("div");
+box.className="child";
+const name=document.createElement("h3");
+name.textContent=child.name;
+const status=document.createElement("p");
+status.className="small";
+status.textContent=record?
+`Entrada: ${formatTime(record.check_in)} | Salida: ${formatTime(record.check_out)}`:
+"Sin entrada registrada hoy.";
 
-    if (recordId) {
-      result = await supabase
-        .from("daycare_attendance")
-        .update({
-          check_out: new Date().toISOString()
-        })
-        .eq("id", recordId)
-        .eq("child_id", childId)
-        .is("check_out", null)
-        .select("id")
-        .single();
-    } else {
-      result = await supabase
-        .from("daycare_attendance")
-        .insert({
-          child_id: childId,
-          check_in: new Date().toISOString(),
-          entry_method: "automatic"
-        })
-        .select("id")
-        .single();
-    }
-
-    if (result.error) throw result.error;
-
-    await loadAttendance();
-    $("message").textContent =
-      "Registro guardado en la nube. 💗";
-  } catch (error) {
-    button.disabled = false;
-    $("message").textContent = error.message;
-  }
+const button=document.createElement("button");
+if(!record){
+button.textContent="Registrar entrada";
+button.onclick=()=>saveAutomatic(child.id,null,button);
+}else if(!record.check_out){
+button.textContent="Registrar salida";
+button.onclick=()=>saveAutomatic(child.id,record.id,button);
+}else{
+button.textContent="Asistencia completada";
+button.disabled=true;
+}
+box.append(name,status,button);
+list.appendChild(box);
+}
+}catch(error){
+$("childrenList").textContent="No se pudo cargar la asistencia.";
+setMessage(error.message);
+}
 }
 
-$("manualForm").addEventListener("submit", async event => {
-  event.preventDefault();
+async function saveAutomatic(childId,recordId,button){
+button.disabled=true;
+setMessage("Guardando...");
+try{
+let result;
+if(recordId){
+result=await supabase.from("daycare_attendance")
+.update({check_out:new Date().toISOString()})
+.eq("id",recordId).eq("child_id",childId)
+.is("check_out",null).select("id").single();
+}else{
+result=await supabase.from("daycare_attendance")
+.insert({
+child_id:childId,
+check_in:new Date().toISOString(),
+entry_method:"automatic"
+}).select("id").single();
+}
+if(result.error)throw result.error;
+await loadAttendance();
+setMessage("Registro guardado en la nube. 💗");
+}catch(error){
+button.disabled=false;
+setMessage(error.message);
+}
+}
 
-  const childId = $("manualChild").value;
-  const day = $("manualDate").value;
-  const inTime = $("manualIn").value;
-  const outTime = $("manualOut").value;
+$("manualForm").addEventListener("submit",async event=>{
+event.preventDefault();
+const childId=$("manualChild").value;
+const day=$("manualDate").value;
+const inTime=$("manualIn").value;
+const outTime=$("manualOut").value;
+if(!childId||!day||!inTime)return;
 
-  if (!childId || !day || !inTime) return;
+const checkIn=toISO(day,inTime);
+const checkOut=outTime?toISO(day,outTime):null;
+if(checkOut&&checkOut<=checkIn){
+setMessage("La salida debe ser posterior a la entrada.");
+return;
+}
+if(!safePast(checkIn)||(checkOut&&!safePast(checkOut))){
+setMessage("No se pueden registrar horarios futuros.");
+return;
+}
 
-  const checkIn = toISO(day, inTime);
-  const checkOut = outTime ? toISO(day, outTime) : null;
-
-  if (checkOut && checkOut <= checkIn) {
-    $("message").textContent =
-      "La salida debe ser posterior a la entrada.";
-    return;
-  }
-
-  if (new Date(checkIn) > new Date() ||
-      (checkOut && new Date(checkOut) > new Date())) {
-    $("message").textContent =
-      "No se pueden registrar horarios futuros.";
-    return;
-  }
-
-  $("manualSave").disabled = true;
-
-  try {
-    const records = await getRecords(day);
-
-    if (records.some(r => r.child_id === childId)) {
-      $("message").textContent =
-        "Este niño ya tiene asistencia ese día. " +
-        "Utiliza el historial para corregirla.";
-      return;
-    }
-
-    const { error } = await supabase
-      .from("daycare_attendance")
-      .insert({
-        child_id: childId,
-        check_in: checkIn,
-        check_out: checkOut,
-        entry_method: "manual"
-      });
-
-    if (error) throw error;
-
-    $("message").textContent =
-      "Registro manual guardado. 💗";
-    $("historyDate").value = day;
-    await loadHistory();
-    await loadAttendance();
-  } catch (error) {
-    $("message").textContent =
-      "No se pudo guardar: " + error.message;
-  } finally {
-    $("manualSave").disabled = false;
-  }
+$("manualSave").disabled=true;
+try{
+const records=await getRecords(day);
+if(records.some(r=>r.child_id===childId)){
+setMessage("Este niño ya tiene asistencia ese día. Utiliza el historial para corregirla.");
+return;
+}
+const {error}=await supabase.from("daycare_attendance")
+.insert({child_id:childId,check_in:checkIn,check_out:checkOut,entry_method:"manual"});
+if(error)throw error;
+$("historyDate").value=day;
+await loadHistory();
+await loadAttendance();
+setMessage("Registro manual guardado. 💗");
+}catch(error){
+setMessage("No se pudo guardar: "+error.message);
+}finally{
+$("manualSave").disabled=false;
+}
 });
 
-async function loadHistory() {
-  const day = $("historyDate").value;
-  const list = $("historyList");
-  list.textContent = "Cargando historial...";
-
-  try {
-    const records = await getRecords(day);
-    list.replaceChildren();
-
-    if (!records.length) {
-      list.textContent = "No hay registros en esta fecha.";
-      return;
-    }
-
-    for (const record of records) {
-      const child = childrenCache.find(
-        c => c.id === record.child_id
-      );
-
-      const box = document.createElement("div");
-      box.className = "child";
-
-      const heading = document.createElement("h3");
-      heading.textContent = child?.name || "Niño registrado";
-
-      const details = document.createElement("p");
-      details.className = "small";
-      details.textContent =
-        `Entrada: ${formatTime(record.check_in)} | ` +
-        `Salida: ${formatTime(record.check_out)} | ` +
-        `Registro: ${record.entry_method === "manual"
-          ? "Manual" : "Automático"}`;
-
-      const edit = document.createElement("button");
-      edit.className = "secondary";
-      edit.textContent = "Corregir horario";
-
-      edit.onclick = () =>
-        showCorrection(box, record, day);
-
-      box.append(heading, details, edit);
-      list.appendChild(box);
-    }
-  } catch (error) {
-    list.textContent =
-      "No se pudo cargar el historial.";
-    $("message").textContent = error.message;
-  }
+async function loadHistory(){
+const day=$("historyDate").value;
+const list=$("historyList");
+if(!day)return;
+list.textContent="Cargando historial...";
+try{
+const records=await getRecords(day);
+list.replaceChildren();
+if(!records.length){
+list.textContent="No hay registros en esta fecha.";
+return;
+}
+for(const record of records){
+const child=childrenCache.find(c=>c.id===record.child_id);
+const box=document.createElement("div");
+box.className="child";
+const heading=document.createElement("h3");
+heading.textContent=child?.name||"Niño registrado";
+const details=document.createElement("p");
+details.className="small";
+details.textContent=`Entrada: ${formatTime(record.check_in)} | Salida: ${formatTime(record.check_out)} | Registro: ${record.entry_method==="manual"?"Manual":"Automático"}`;
+const edit=document.createElement("button");
+edit.className="secondary";
+edit.textContent="Corregir horario";
+edit.onclick=()=>showCorrection(box,record,day);
+box.append(heading,details,edit);
+list.appendChild(box);
+}
+}catch(error){
+list.textContent="No se pudo cargar el historial.";
+setMessage(error.message);
+}
 }
 
-function showCorrection(box, record, day) {
-  const form = document.createElement("form");
+function showCorrection(box,record,day){
+const form=document.createElement("form");
+const labelIn=document.createElement("label");
+const inputIn=document.createElement("input");
+const labelOut=document.createElement("label");
+const inputOut=document.createElement("input");
+const save=document.createElement("button");
+const cancel=document.createElement("button");
 
-  const labelIn = document.createElement("label");
-  labelIn.textContent = "Entrada correcta";
-  const inputIn = document.createElement("input");
-  inputIn.type = "time";
-  inputIn.required = true;
-  inputIn.value = timeForInput(record.check_in);
+labelIn.textContent="Entrada correcta";
+inputIn.type="time";
+inputIn.required=true;
+inputIn.value=timeForInput(record.check_in);
+labelOut.textContent="Salida correcta";
+inputOut.type="time";
+inputOut.value=timeForInput(record.check_out);
+save.type="submit";
+save.textContent="Guardar corrección";
+cancel.type="button";
+cancel.className="secondary";
+cancel.textContent="Cancelar";
+cancel.onclick=loadHistory;
+form.append(labelIn,inputIn,labelOut,inputOut,save,cancel);
+box.querySelector("form")?.remove();
+box.appendChild(form);
 
-  const labelOut = document.createElement("label");
-  labelOut.textContent = "Salida correcta";
-  const inputOut = document.createElement("input");
-  inputOut.type = "time";
-  inputOut.value = timeForInput(record.check_out);
-
-  const save = document.createElement("button");
-  save.type = "submit";
-  save.textContent = "Guardar corrección";
-
-  const cancel = document.createElement("button");
-  cancel.type = "button";
-  cancel.className = "secondary";
-  cancel.textContent = "Cancelar";
-  cancel.onclick = loadHistory;
-
-  form.append(
-    labelIn, inputIn, labelOut, inputOut, save, cancel
-  );
-
-  const oldForm = box.querySelector("form");
-  if (oldForm) oldForm.remove();
-  box.appendChild(form);
-
-  form.onsubmit = async event => {
-    event.preventDefault();
-
-    const checkIn = toISO(day, inputIn.value);
-    const checkOut = inputOut.value
-      ? toISO(day, inputOut.value) : null;
-
-    if (checkOut && checkOut <= checkIn) {
-      $("message").textContent =
-        "La salida debe ser posterior a la entrada.";
-      return;
-    }
-
-    if (new Date(checkIn) > new Date() ||
-        (checkOut && new Date(checkOut) > new Date())) {
-      $("message").textContent =
-        "No se pueden registrar horarios futuros.";
-      return;
-    }
-
-    if (!confirm("¿Guardar esta corrección?")) return;
-
-    save.disabled = true;
-
-    const { error } = await supabase
-      .from("daycare_attendance")
-      .update({
-        check_in: checkIn,
-        check_out: checkOut,
-        entry_method: "manual"
-      })
-      .eq("id", record.id);
-
-    if (error) {
-      save.disabled = false;
-      $("message").textContent = error.message;
-      return;
-    }
-
-    await loadHistory();
-    await loadAttendance();
-    $("message").textContent =
-      "Corrección guardada en la nube. 💗";
-  };
+form.onsubmit=async event=>{
+event.preventDefault();
+const checkIn=toISO(day,inputIn.value);
+const checkOut=inputOut.value?toISO(day,inputOut.value):null;
+if(checkOut&&checkOut<=checkIn){
+setMessage("La salida debe ser posterior a la entrada.");
+return;
+}
+if(!safePast(checkIn)||(checkOut&&!safePast(checkOut))){
+setMessage("No se pueden registrar horarios futuros.");
+return;
+}
+if(!confirm("¿Guardar esta corrección?"))return;
+save.disabled=true;
+const {error}=await supabase.from("daycare_attendance")
+.update({check_in:checkIn,check_out:checkOut,entry_method:"manual"})
+.eq("id",record.id);
+if(error){
+save.disabled=false;
+setMessage(error.message);
+return;
+}
+await loadHistory();
+await loadAttendance();
+setMessage("Corrección guardada en la nube. 💗");
+};
 }
 
-$("loginForm").addEventListener("submit", async event => {
-  event.preventDefault();
-  $("loginButton").disabled = true;
-  $("message").textContent = "Verificando acceso...";
+async function saveNap({childId,position,breathing,notes,checkedAt,method,button}){
+button.disabled=true;
+setMessage("Guardando revisión...");
+try{
+if(!childId||!position||!breathing||!safePast(checkedAt))
+throw Error("Revisa el niño, los datos y la hora real.");
 
-  try {
-    const { data, error } =
-      await supabase.auth.signInWithPassword({
-        email: $("email").value,
-        password: $("password").value
-      });
+const {data:{user},error:authError}=await supabase.auth.getUser();
+if(authError||!user)throw Error("Inicia sesión nuevamente.");
 
-    if (error) throw error;
-    await checkAccess(data.user);
-  } catch (error) {
-    showLoggedOut();
-    $("message").textContent =
-      "No se pudo iniciar sesión. Revisa tus datos.";
-  } finally {
-    $("loginButton").disabled = false;
-  }
+const {error}=await supabase.from("daycare_nap_checks").insert({
+child_id:childId,
+checked_at:checkedAt,
+position,
+breathing,
+notes:notes.trim()||null,
+entry_method:method,
+created_by:user.id
+});
+if(error)throw error;
+
+await loadNapHistory();
+setMessage("Revisión real guardada en la nube. 💗");
+return true;
+}catch(error){
+setMessage("No se pudo guardar: "+error.message);
+return false;
+}finally{
+button.disabled=false;
+}
+}
+
+$("napForm").addEventListener("submit",async event=>{
+event.preventDefault();
+const ok=await saveNap({
+childId:$("napChild").value,
+position:$("napPosition").value,
+breathing:$("napBreathing").value,
+notes:$("napNotes").value,
+checkedAt:new Date().toISOString(),
+method:"automatic",
+button:$("napAuto")
+});
+if(ok){
+$("napPosition").value="";
+$("napBreathing").value="";
+$("napNotes").value="";
+}
 });
 
-$("openAttendance").onclick = async () => {
-  $("dashboard").classList.add("hidden");
-  $("attendance").classList.remove("hidden");
-  $("manualDate").value = localDate();
-  $("historyDate").value = localDate();
-  $("message").textContent = "";
-  await loadAttendance();
-  await loadHistory();
+$("napManualForm").addEventListener("submit",async event=>{
+event.preventDefault();
+const day=$("napManualDate").value;
+const time=$("napManualTime").value;
+if(!day||!time)return;
+const checkedAt=toISO(day,time);
+if(!safePast(checkedAt)){
+setMessage("La revisión manual debe tener una hora real que ya haya ocurrido.");
+return;
+}
+const ok=await saveNap({
+childId:$("napManualChild").value,
+position:$("napManualPosition").value,
+breathing:$("napManualBreathing").value,
+notes:$("napManualNotes").value,
+checkedAt,
+method:"manual",
+button:$("napManualSave")
+});
+if(ok){
+$("napHistoryDate").value=day;
+await loadNapHistory();
+$("napManualTime").value="";
+$("napManualNotes").value="";
+}
+});
+
+async function loadNapHistory(){
+const day=$("napHistoryDate").value;
+const list=$("napHistoryList");
+if(!day)return;
+list.textContent="Cargando revisiones...";
+try{
+const [start,end]=dateRange(day);
+let query=supabase.from("daycare_nap_checks")
+.select("child_id,checked_at,position,breathing,notes,entry_method")
+.gte("checked_at",start).lt("checked_at",end)
+.order("checked_at",{ascending:true});
+if($("napHistoryChild").value)
+query=query.eq("child_id",$("napHistoryChild").value);
+const {data,error}=await query;
+if(error)throw error;
+list.replaceChildren();
+if(!data?.length){
+list.textContent="No hay revisiones registradas en esta fecha.";
+return;
+}
+for(const record of data){
+const child=childrenCache.find(c=>c.id===record.child_id);
+const box=document.createElement("div");
+const heading=document.createElement("h3");
+const details=document.createElement("p");
+box.className="child";
+heading.textContent=`${child?.name||"Niño registrado"} — ${formatTime(record.checked_at)}`;
+details.className="small";
+details.textContent=`${record.entry_method==="manual"?"Manual":"Automático"} | Posición: ${record.position||"Sin dato"} | Respiración: ${record.breathing||"Sin dato"}${record.notes?" | Observaciones: "+record.notes:""}`;
+box.append(heading,details);
+list.appendChild(box);
+}
+}catch(error){
+list.textContent="No se pudo cargar el historial de siesta.";
+setMessage(error.message);
+}
+}
+
+$("loginForm").addEventListener("submit",async event=>{
+event.preventDefault();
+$("loginButton").disabled=true;
+setMessage("Verificando acceso...");
+try{
+const {data,error}=await supabase.auth.signInWithPassword({
+email:$("email").value,
+password:$("password").value
+});
+if(error)throw error;
+await checkAccess(data.user);
+}catch(error){
+showView("login");
+setMessage("No se pudo iniciar sesión. Revisa tus datos.");
+}finally{
+$("loginButton").disabled=false;
+}
+});
+
+$("openAttendance").onclick=async()=>{
+showView("attendance");
+$("manualDate").value=localDate();
+$("historyDate").value=localDate();
+setMessage("");
+await loadAttendance();
+await loadHistory();
 };
 
-$("refreshAttendance").onclick = loadAttendance;
-$("loadHistory").onclick = loadHistory;
-
-$("backDashboard").onclick = () => {
-  $("attendance").classList.add("hidden");
-  $("dashboard").classList.remove("hidden");
-  $("message").textContent = "";
+$("openNaps").onclick=async()=>{
+showView("naps");
+$("napManualDate").value=localDate();
+$("napHistoryDate").value=localDate();
+setMessage("");
+try{
+await getChildren();
+await loadNapHistory();
+}catch(error){
+setMessage("No se pudieron cargar los niños: "+error.message);
+}
 };
 
-$("logout").onclick = async () => {
-  await supabase.auth.signOut();
-  showLoggedOut();
-  $("message").textContent = "Sesión cerrada.";
+$("refreshAttendance").onclick=loadAttendance;
+$("loadHistory").onclick=loadHistory;
+$("loadNapHistory").onclick=loadNapHistory;
+
+$("backDashboard").onclick=$("backFromNaps").onclick=()=>{
+showView("dashboard");
+setMessage("");
 };
 
-const { data: { session } } =
-  await supabase.auth.getSession();
+$("logout").onclick=async()=>{
+await supabase.auth.signOut();
+showView("login");
+setMessage("Sesión cerrada.");
+};
 
+const {data:{session}}=await supabase.auth.getSession();
 await checkAccess(session?.user);
 </script>
 </body>
 </html>
-
