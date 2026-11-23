@@ -297,7 +297,7 @@ const {data,error}=await supabase.from("daycare_children")
 if(error)throw error;
 childrenCache=data||[];
 
-for(const id of ["manualChild","napChild","napManualChild","napHistoryChild"]){
+for(const id of ["manualChild","napChild","napManualChild","napHistoryChild","reportChild","reportHistoryChild"]){
 const select=$(id),old=select.value;
 select.replaceChildren();
 if(id==="napHistoryChild" || id==="reportHistoryChild"){
