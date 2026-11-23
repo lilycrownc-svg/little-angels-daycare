@@ -855,6 +855,88 @@ setMessage("Sesión cerrada.");
 
 const {data:{session}}=await supabase.auth.getSession();
 await checkAccess(session?.user);
+
+async function generateParentReport() {
+  const childId = $("parentReportChild").value;
+  const day = $("parentReportDate").value;
+  const output = $("parentReportResult");
+
+  if (!childId || !day) {
+    output.textContent = "Selecciona un niño y una fecha.";
+    return;
+  }
+
+  output.textContent = "Preparando reporte...";
+
+  try {
+    const child = childrenCache.find(c => c.id === childId);
+    const [start, end] = dateRange(day);
+
+    const { data, error } = await supabase
+      .from("daycare_daily_reports")
+      .select("activity_time,category,details")
+      .eq("child_id", childId)
+      .gte("activity_time", start)
+      .lt("activity_time", end)
+      .order("activity_time", { ascending: true });
+
+    if (error) throw error;
+
+    const labels = {
+      alimentacion: "🍎 Alimentación",
+      panales: "🍼 Pañales",
+      siesta: "🌙 Siesta",
+      estado_animo: "💗 Estado de ánimo",
+      observaciones: "📝 Observaciones"
+    };
+
+    const lines = [
+      "💗 LITTLE ANGELS DAYCARE",
+      "Que el amor sea tu guía",
+      "",
+      "Reporte de: " + (child?.name || "Niño"),
+      "Fecha: " + day,
+      ""
+    ];
+
+    const records = (data || []).filter(
+      record => record.category !== "actividades"
+    );
+
+    if (!records.length) {
+      lines.push("No hay registros para esta fecha.");
+    } else {
+      for (const record of records) {
+        const time = formatTime(record.activity_time);
+        const category = labels[record.category] || record.category;
+
+        lines.push(category);
+        lines.push(time + " — " + record.details);
+        lines.push("");
+      }
+    }
+
+    const report = lines.join("\n");
+    output.textContent = report;
+
+    $("copyParentReport").onclick = () => {
+      navigator.clipboard.writeText(report)
+        .then(() => setMessage("Reporte copiado."))
+        .catch(() => setMessage("No se pudo copiar."));
+    };
+
+    $("smsParentReport").onclick = () => {
+      window.location.href = "sms:?&body=" + encodeURIComponent(report);
+    };
+
+  } catch (error) {
+    output.textContent = "No se pudo preparar el reporte.";
+    setMessage(error.message);
+  }
+}
+
+$("generateParentReport").onclick = generateParentReport;
+  
 </script>
 </body>
 </html>
