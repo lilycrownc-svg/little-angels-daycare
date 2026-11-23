@@ -941,7 +941,10 @@ async function generateParentReport() {
 }
 
 $("generateParentReport").onclick = generateParentReport;
-  
+  $("openParentReports").onclick = () => {
+  showView("parentReports");
+  setMessage("");
+};
 </script>
 </body>
 </html>
