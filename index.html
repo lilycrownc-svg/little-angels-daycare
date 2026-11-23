@@ -124,6 +124,39 @@ label { display:block; margin-top:10px; font-weight:bold; }
   </button>
 </section>
 
+<section id="parentReports" class="hidden">
+  <div class="card">
+    <h2>Reportes para padres 💗</h2>
+    <p>Consulta el reporte individual de cada niño.</p>
+
+    <label for="parentReportChild">Niño</label>
+    <select id="parentReportChild"></select>
+
+    <label for="parentReportDate">Fecha</label>
+    <input id="parentReportDate" type="date">
+
+    <button id="generateParentReport" type="button">
+      Generar reporte
+    </button>
+
+    <h3>Reporte diario 💗</h3>
+    <div id="parentReportResult"></div>
+
+    <button id="copyParentReport" type="button">
+      Copiar reporte
+    </button>
+
+    <button id="smsParentReport" type="button">
+      Enviar por mensaje de texto
+    </button>
+
+    <button id="backFromParentReports"
+            class="secondary" type="button">
+      Volver al inicio
+    </button>
+  </div>
+</section>
+
 
 <section id="attendance" class="hidden">
 <div class="card">
@@ -302,7 +335,7 @@ const {data,error}=await supabase.from("daycare_children")
 if(error)throw error;
 childrenCache=data||[];
 
-for(const id of ["manualChild","napChild","napManualChild","napHistoryChild","reportChild","reportHistoryChild"]){
+for(const id of ["manualChild","napChild","napManualChild","napHistoryChild","reportChild","reportHistoryChild","parentReportChild"]){
 const select=$(id),old=select.value;
 select.replaceChildren();
 if(id==="napHistoryChild" || id==="reportHistoryChild"){
@@ -945,6 +978,12 @@ $("generateParentReport").onclick = generateParentReport;
   showView("parentReports");
   setMessage("");
 };
+  
+$("backFromParentReports").onclick = () => {
+  showView("dashboard");
+  setMessage("");
+};
+
 </script>
 </body>
 </html>
