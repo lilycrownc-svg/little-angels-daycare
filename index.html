@@ -246,7 +246,7 @@ let childrenCache=[];
 const setMessage=text=>{$("message").textContent=text;};
 
 function showView(view){
-for(const id of ["login","dashboard","attendance","naps","reports"])
+for(const id of ["login","dashboard","attendance","naps","reports","parentReports"])
 $(id).classList.toggle("hidden",id!==view);
 }
 
