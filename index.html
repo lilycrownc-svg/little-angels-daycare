@@ -57,9 +57,68 @@ label { display:block; margin-top:10px; font-weight:bold; }
 <div class="card">
 <h2>Reportes diarios</h2>
 <p>Comidas, pañales y actividades.</p>
-<button disabled>Próximamente</button>
+<button id="openReports">Abrir reportes diarios</button>
 </div>
+</section> 
+<section id="reports" class="hidden">
+  <div class="card">
+    <h2>Reportes diarios 💗</h2>
+    <p>Registra las actividades reales de cada niño.</p>
+
+    <form id="reportForm">
+      <label for="reportChild">Niño</label>
+      <select id="reportChild" required></select>
+
+      <label for="reportDate">Fecha</label>
+      <input id="reportDate" type="date" required>
+
+      <label for="reportTime">Hora</label>
+      <input id="reportTime" type="time" required>
+
+      <label for="reportCategory">Tipo de registro</label>
+      <select id="reportCategory" required>
+        <option value="">Seleccionar</option>
+        <option value="alimentacion">Alimentación</option>
+        <option value="panales">Pañales</option>
+        <option value="siesta">Siesta</option>
+        <option value="actividades">Actividades</option>
+        <option value="estado_animo">Estado de ánimo</option>
+        <option value="observaciones">Observaciones</option>
+      </select>
+
+      <label for="reportDetails">Detalles</label>
+      <textarea id="reportDetails" rows="3" required
+        placeholder="Describe lo que ocurrió"></textarea>
+
+      <button id="reportSave" type="submit">
+        Guardar reporte
+      </button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Historial de reportes</h2>
+
+    <label for="reportHistoryDate">Fecha</label>
+    <input id="reportHistoryDate" type="date">
+
+    <label for="reportHistoryChild">Niño</label>
+    <select id="reportHistoryChild">
+      <option value="">Todos los niños</option>
+    </select>
+
+    <button id="loadReportHistory">
+      Consultar reportes
+    </button>
+
+    <div id="reportHistoryList"></div>
+  </div>
+
+  <button id="backFromReports" class="secondary">
+    Volver al inicio
+  </button>
 </section>
+
 
 <section id="attendance" class="hidden">
 <div class="card">
@@ -182,7 +241,7 @@ let childrenCache=[];
 const setMessage=text=>{$("message").textContent=text;};
 
 function showView(view){
-for(const id of ["login","dashboard","attendance","naps"])
+for(const id of ["login","dashboard","attendance","naps","reports"])
 $(id).classList.toggle("hidden",id!==view);
 }
 
@@ -241,7 +300,7 @@ childrenCache=data||[];
 for(const id of ["manualChild","napChild","napManualChild","napHistoryChild"]){
 const select=$(id),old=select.value;
 select.replaceChildren();
-if(id==="napHistoryChild"){
+if(id==="napHistoryChild" || id==="reportHistoryChild"){
 const all=document.createElement("option");
 all.value="";
 all.textContent="Todos los niños";
@@ -619,6 +678,164 @@ await loadNapHistory();
 }catch(error){
 setMessage("No se pudieron cargar los niños: "+error.message);
 }
+};
+
+$("openReports").onclick=async()=>{
+  showView("reports");
+  $("reportDate").value=localDate();
+  $("reportHistoryDate").value=localDate();
+
+  const now=new Date();
+  $("reportTime").value=
+    String(now.getHours()).padStart(2,"0")+":"+
+    String(now.getMinutes()).padStart(2,"0");
+
+  setMessage("");
+
+  try{
+    await getChildren();
+  }catch(error){
+    setMessage("No se pudieron cargar los niños: "+error.message);
+  }
+};
+
+$("reportForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+
+  const childId=$("reportChild").value;
+  const day=$("reportDate").value;
+  const time=$("reportTime").value;
+  const category=$("reportCategory").value;
+  const details=$("reportDetails").value.trim();
+
+  if(!childId||!day||!time||!category||!details){
+    setMessage("Completa todos los campos.");
+    return;
+  }
+
+  const activityTime=toISO(day,time);
+
+  if(!safePast(activityTime)){
+    setMessage("No puedes registrar una actividad futura.");
+    return;
+  }
+
+  $("reportSave").disabled=true;
+  setMessage("Guardando reporte...");
+
+  try{
+    const {data:{user},error:authError}=
+      await supabase.auth.getUser();
+
+    if(authError||!user){
+      throw Error("Inicia sesión nuevamente.");
+    }
+
+    const {error}=await supabase
+      .from("daycare_daily_reports")
+      .insert({
+        child_id:childId,
+        activity_date:day,
+        activity_time:activityTime,
+        category:category,
+        details:details,
+        created_by:user.id
+      });
+
+    if(error)throw error;
+
+    $("reportDetails").value="";
+    $("reportCategory").value="";
+    $("reportHistoryDate").value=day;
+    await loadReportHistory();
+    
+    setMessage("Reporte guardado en la nube. 💗");
+
+  }catch(error){
+    setMessage("No se pudo guardar: "+error.message);
+  }finally{
+    $("reportSave").disabled=false;
+  }
+});
+
+async function loadReportHistory(){
+  const day=$("reportHistoryDate").value;
+  const list=$("reportHistoryList");
+
+  if(!day)return;
+
+  list.textContent="Cargando reportes...";
+
+  try{
+    const [start,end]=dateRange(day);
+
+    let query=supabase
+      .from("daycare_daily_reports")
+      .select("child_id,activity_time,category,details")
+      .gte("activity_time",start)
+      .lt("activity_time",end)
+      .order("activity_time",{ascending:true});
+
+    if($("reportHistoryChild").value){
+      query=query.eq(
+        "child_id",
+        $("reportHistoryChild").value
+      );
+    }
+
+    const {data,error}=await query;
+    if(error)throw error;
+
+    list.replaceChildren();
+
+    if(!data?.length){
+      list.textContent="No hay reportes registrados en esta fecha.";
+      return;
+    }
+
+    const categories={
+      alimentacion:"🍎 Alimentación",
+      panales:"🍼 Pañales",
+      siesta:"🌙 Siesta",
+      actividades:"🎨 Actividades",
+      estado_animo:"💗 Estado de ánimo",
+      observaciones:"📝 Observaciones"
+    };
+
+    for(const record of data){
+      const child=childrenCache.find(
+        c=>c.id===record.child_id
+      );
+
+      const box=document.createElement("div");
+      box.className="child";
+
+      const heading=document.createElement("h3");
+      heading.textContent=
+        `${child?.name||"Niño registrado"} — ${formatTime(record.activity_time)}`;
+
+      const category=document.createElement("p");
+      category.textContent=
+        categories[record.category]||record.category;
+
+      const details=document.createElement("p");
+      details.textContent=record.details;
+
+      box.append(heading,category,details);
+      list.appendChild(box);
+    }
+
+  }catch(error){
+    list.textContent="No se pudo cargar el historial.";
+    setMessage(error.message);
+  }
+}
+
+$("loadReportHistory").onclick=loadReportHistory;
+
+$("backFromReports").onclick=()=>{
+  showView("dashboard");
+  setMessage("");
 };
 
 $("refreshAttendance").onclick=loadAttendance;
