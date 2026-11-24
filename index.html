@@ -191,6 +191,7 @@ label { display:block; margin-top:10px; font-weight:bold; }
 </section>
 
 <section id="naps" class="hidden">
+<div id="napReminders"></div>
 <div class="card">
 <h2>Revisiones de siesta 💗</h2>
 <p class="hint">Registra únicamente revisiones realmente realizadas. Esta herramienta no sustituye la supervisión de seguridad.</p>
@@ -582,7 +583,9 @@ entry_method:method,
 created_by:user.id
 });
 if(error)throw error;
-
+if(method === "automatic"){
+  startNapReminder(childId, checkedAt);
+}
 await loadNapHistory();
 setMessage("Revisión real guardada en la nube. 💗");
 return true;
@@ -985,7 +988,111 @@ $("backFromParentReports").onclick = () => {
   showView("dashboard");
   setMessage("");
 };
+const napReminders = new Map();
 
+function startNapReminder(childId, checkedAt) {
+  const child = childrenCache.find(
+    c => String(c.id) === String(childId)
+  );
+
+  napReminders.set(String(childId), {
+    name: child ? child.name : "Niño",
+    due: new Date(checkedAt).getTime() + 900000
+  });
+
+  renderNapReminders();
+}
+
+function renderNapReminders() {
+  let panel = document.getElementById("napReminderPanel");
+
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "napReminderPanel";
+
+    panel.style.cssText =
+      "position:fixed;top:15px;right:15px;" +
+      "width:300px;max-width:90vw;" +
+      "max-height:70vh;overflow:auto;" +
+      "background:#fff0f5;padding:15px;" +
+      "border:2px solid #b76e95;" +
+      "border-radius:16px;z-index:9999;" +
+      "box-shadow:0 4px 15px #0003;";
+
+    document.body.appendChild(panel);
+  }
+
+  panel.replaceChildren();
+  panel.hidden = napReminders.size === 0 || document.hidden;
+
+  if (panel.hidden) return;
+
+  for (const [id, reminder] of napReminders) {
+    const remaining = reminder.due - Date.now();
+    const box = document.createElement("div");
+
+    box.style.cssText =
+      "padding:10px;margin-bottom:8px;" +
+      "border-radius:12px;background:white;";
+
+    const title = document.createElement("strong");
+
+    title.textContent = remaining <= 0
+      ? "💗 Revisar a " + reminder.name
+      : "😴 " + reminder.name;
+
+    box.appendChild(title);
+
+    const time = document.createElement("p");
+
+    time.textContent = remaining <= 0
+      ? "¡Revisión pendiente!"
+      : "Próxima revisión en " +
+        Math.ceil(remaining / 60000) + " min";
+
+    box.appendChild(time);
+
+    if (remaining <= 0) {
+      const review = document.createElement("button");
+
+      review.textContent = "Realizar revisión";
+      review.onclick = () => {
+        showView("naps");
+        $("napChild").value = id;
+        $("napForm").scrollIntoView({
+          behavior: "smooth"
+        });
+      };
+
+      box.appendChild(review);
+    }
+
+    const stop = document.createElement("button");
+
+    stop.textContent = "Ya despertó";
+    stop.className = "secondary";
+
+    stop.onclick = () => {
+      napReminders.delete(id);
+      renderNapReminders();
+    };
+
+    box.appendChild(stop);
+    panel.appendChild(box);
+  }
+}
+
+setInterval(renderNapReminders, 1000);
+
+document.addEventListener(
+  "visibilitychange",
+  renderNapReminders
+);
+
+$("logout").addEventListener("click", () => {
+  napReminders.clear();
+  renderNapReminders();
+});
 </script>
 </body>
 </html>
