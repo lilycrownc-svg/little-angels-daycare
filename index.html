@@ -259,7 +259,10 @@ label { display:block; margin-top:10px; font-weight:bold; }
 <option value="">Todos los niños</option>
 </select>
 <button id="loadNapHistory">Consultar revisiones</button>
-<div id="napHistoryList"></div> 
+<details id="napHistoryDetails">
+  <summary>Ver historial de revisiones</summary>
+  <div id="napHistoryList"></div>
+</details>
   <hr>
 
 <h2>Historial individual en PDF</h2>
@@ -1302,6 +1305,9 @@ for (let i = 1; i <= pages; i++) {
     button.disabled = false;
   }
 }; 
+  $("loadNapHistory").addEventListener("click", () => {
+  $("napHistoryDetails").open = true;
+});
 </script>
 </body>
 </html>
