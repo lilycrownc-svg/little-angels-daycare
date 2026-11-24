@@ -165,6 +165,26 @@ label { display:block; margin-top:10px; font-weight:bold; }
 <div id="childrenList"></div>
 <button id="refreshAttendance">Actualizar</button>
 </div>
+  <div class="card">
+  <h2>Ausencias y cierres</h2>
+
+  <label for="absenceChild">Niño</label>
+  <select id="absenceChild"></select>
+
+  <label for="absenceDate">Fecha</label>
+  <input id="absenceDate" type="date">
+
+  <label for="absenceNotes">Motivo (opcional)</label>
+  <textarea id="absenceNotes" rows="2"></textarea>
+
+  <button id="markAbsent" type="button">
+    No asistió
+  </button>
+
+  <button id="markClosed" type="button">
+    Daycare cerrado
+  </button>
+</div>
 <div class="card">
 <h2>Registro manual</h2>
 <p class="small">Utiliza las horas reales de asistencia.</p>
@@ -356,7 +376,7 @@ const {data,error}=await supabase.from("daycare_children")
 if(error)throw error;
 childrenCache=data||[];
 
-for(const id of ["manualChild","napChild","napManualChild","napHistoryChild","reportChild","reportHistoryChild","parentReportChild"]){
+for(const id of ["absenceChild","manualChild","napChild","napManualChild","napHistoryChild","reportChild","reportHistoryChild","parentReportChild"]){
 const select=$(id),old=select.value;
 select.replaceChildren();
 if(id==="napHistoryChild" || id==="reportHistoryChild"){
@@ -496,37 +516,89 @@ $("manualSave").disabled=false;
 });
 
 async function loadHistory(){
-const day=$("historyDate").value;
-const list=$("historyList");
-if(!day)return;
-list.textContent="Cargando historial...";
-try{
-const records=await getRecords(day);
-list.replaceChildren();
-if(!records.length){
-list.textContent="No hay registros en esta fecha.";
-return;
-}
-for(const record of records){
-const child=childrenCache.find(c=>c.id===record.child_id);
-const box=document.createElement("div");
-box.className="child";
-const heading=document.createElement("h3");
-heading.textContent=child?.name||"Niño registrado";
-const details=document.createElement("p");
-details.className="small";
-details.textContent=`Entrada: ${formatTime(record.check_in)} | Salida: ${formatTime(record.check_out)} | Registro: ${record.entry_method==="manual"?"Manual":"Automático"}`;
-const edit=document.createElement("button");
-edit.className="secondary";
-edit.textContent="Corregir horario";
-edit.onclick=()=>showCorrection(box,record,day);
-box.append(heading,details,edit);
-list.appendChild(box);
-}
-}catch(error){
-list.textContent="No se pudo cargar el historial.";
-setMessage(error.message);
-}
+  const day = $("historyDate").value;
+  const list = $("historyList");
+  if(!day) return;
+
+  list.textContent = "Cargando historial...";
+
+  try {
+    const records = await getRecords(day);
+
+    const {data: absences, error} = await supabase
+      .from("daycare_absences")
+      .select("child_id,status,notes")
+      .eq("absence_date", day);
+
+    if(error) throw error;
+
+    list.replaceChildren();
+
+    if(!records.length && !absences.length){
+      list.textContent = "No hay registros en esta fecha.";
+      return;
+    }
+
+    for(const record of records){
+      const child = childrenCache.find(
+        c => String(c.id) === String(record.child_id)
+      );
+
+      const box = document.createElement("div");
+      box.className = "child";
+
+      const heading = document.createElement("h3");
+      heading.textContent = child?.name || "Niño registrado";
+
+      const details = document.createElement("p");
+      details.className = "small";
+      details.textContent =
+        "Entrada: " + formatTime(record.check_in) +
+        " | Salida: " +
+        (record.check_out ? formatTime(record.check_out) : "Pendiente");
+
+      const edit = document.createElement("button");
+      edit.className = "secondary";
+      edit.textContent = "Corregir horario";
+      edit.onclick = () => showCorrection(box, record, day);
+
+      box.append(heading, details, edit);
+      list.appendChild(box);
+    }
+
+    for(const absence of absences){
+      const child = childrenCache.find(
+        c => String(c.id) === String(absence.child_id)
+      );
+
+      const box = document.createElement("div");
+      box.className = "child";
+
+      const heading = document.createElement("h3");
+      heading.textContent = child?.name || "Niño registrado";
+
+      const details = document.createElement("p");
+      details.textContent = absence.status === "closed"
+        ? "🏠 Daycare cerrado"
+        : "❌ No asistió";
+
+      details.style.color = "#b76e95";
+
+      box.append(heading, details);
+
+      if(absence.notes){
+        const notes = document.createElement("p");
+        notes.textContent = absence.notes;
+        box.appendChild(notes);
+      }
+
+      list.appendChild(box);
+    }
+
+  } catch(error){
+    list.textContent = "No se pudo cargar el historial.";
+    setMessage(error.message);
+  }
 }
 
 function showCorrection(box,record,day){
@@ -1308,6 +1380,76 @@ for (let i = 1; i <= pages; i++) {
   $("loadNapHistory").addEventListener("click", () => {
   $("napHistoryDetails").open = true;
 });
+ $("absenceDate").value = localDate();
+
+async function saveAbsence(status) {
+  const childId = $("absenceChild").value;
+  const day = $("absenceDate").value;
+  const notes = $("absenceNotes").value.trim();
+
+  if (!childId || !day) {
+    alert("Selecciona un niño y una fecha.");
+    return;
+  }
+
+  if (day > localDate()) {
+    alert("Selecciona una fecha actual o anterior.");
+    return;
+  }
+
+  const label = status === "absent"
+    ? "No asistió"
+    : "Daycare cerrado";
+
+  if (!confirm("¿Registrar " + label + "?")) return;
+
+  $("markAbsent").disabled = true;
+  $("markClosed").disabled = true;
+
+  try {
+    const records = await getRecords(day);
+
+    if (records.some(r => String(r.child_id) === childId)) {
+      throw new Error("El niño ya tiene asistencia registrada en esta fecha.");
+    }
+
+    const {data:{user}, error:authError} =
+      await supabase.auth.getUser();
+
+    if (authError || !user) {
+      throw new Error("Inicia sesión nuevamente.");
+    }
+
+    const {error} = await supabase
+      .from("daycare_absences")
+      .insert({
+        child_id: childId,
+        absence_date: day,
+        status: status,
+        notes: notes || null,
+        created_by: user.id
+      });
+
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Ya existe una ausencia o cierre para este niño y fecha.");
+      }
+      throw error;
+    }
+
+    $("absenceNotes").value = "";
+    alert(label + ": guardado en la nube.");
+
+  } catch (error) {
+    alert("No se pudo guardar: " + error.message);
+  } finally {
+    $("markAbsent").disabled = false;
+    $("markClosed").disabled = false;
+  }
+}
+
+$("markAbsent").onclick = () => saveAbsence("absent");
+$("markClosed").onclick = () => saveAbsence("closed"); 
 </script>
 </body>
 </html>
