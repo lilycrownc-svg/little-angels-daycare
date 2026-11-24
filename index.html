@@ -583,9 +583,18 @@ entry_method:method,
 created_by:user.id
 });
 if(error)throw error;
+
 if(method === "automatic"){
   startNapReminder(childId, checkedAt);
+}else if(method === "manual"){
+  if(confirm("¿El niño continúa durmiendo?")){
+    startNapReminder(childId, checkedAt);
+  }else{
+    napReminders.delete(String(childId));
+    renderNapReminders();
+  }
 }
+
 await loadNapHistory();
 setMessage("Revisión real guardada en la nube. 💗");
 return true;
@@ -1010,16 +1019,16 @@ function renderNapReminders() {
     panel = document.createElement("div");
     panel.id = "napReminderPanel";
 
-    panel.style.cssText =
-      "position:fixed;top:15px;right:15px;" +
-      "width:300px;max-width:90vw;" +
-      "max-height:70vh;overflow:auto;" +
-      "background:#fff0f5;padding:15px;" +
-      "border:2px solid #b76e95;" +
-      "border-radius:16px;z-index:9999;" +
-      "box-shadow:0 4px 15px #0003;";
+    
+panel.style.cssText =
+  "width:100%;box-sizing:border-box;" +
+  "margin:15px 0;padding:15px;" +
+  "background:#fff0f5;" +
+  "border:2px solid #b76e95;" +
+  "border-radius:16px;";
 
-    document.body.appendChild(panel);
+$("napForm").before(panel);
+
   }
 
   panel.replaceChildren();
