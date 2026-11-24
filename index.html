@@ -259,7 +259,24 @@ label { display:block; margin-top:10px; font-weight:bold; }
 <option value="">Todos los niños</option>
 </select>
 <button id="loadNapHistory">Consultar revisiones</button>
-<div id="napHistoryList"></div>
+<div id="napHistoryList"></div> 
+  <hr>
+
+<h2>Historial individual en PDF</h2>
+
+<p class="small">
+Selecciona un niño y el período que deseas descargar.
+</p>
+
+<label for="napPdfStart">Fecha inicial</label>
+<input id="napPdfStart" type="date">
+
+<label for="napPdfEnd">Fecha final</label>
+<input id="napPdfEnd" type="date">
+
+<button id="downloadNapPdf" type="button">
+📄 Descargar historial en PDF
+</button>
 </div>
 <button id="backFromNaps" class="secondary">Volver al inicio</button>
 </section>
@@ -1102,6 +1119,140 @@ $("logout").addEventListener("click", () => {
   napReminders.clear();
   renderNapReminders();
 });
+ $("downloadNapPdf").onclick = async () => {
+  const childId = $("napHistoryChild").value;
+  const startDay = $("napPdfStart").value;
+  const endDay = $("napPdfEnd").value;
+
+  if (!childId) {
+    alert("Selecciona un solo niño.");
+    return;
+  }
+
+  if (!startDay || !endDay || startDay > endDay) {
+    alert("Selecciona un período válido.");
+    return;
+  }
+
+  const button = $("downloadNapPdf");
+  button.disabled = true;
+
+  try {
+    const child = childrenCache.find(
+      c => String(c.id) === String(childId)
+    );
+
+    if (!child) throw Error("Niño no encontrado.");
+
+    const [start] = dateRange(startDay);
+    const [, end] = dateRange(endDay);
+
+    let records = [];
+    let offset = 0;
+
+    while (true) {
+      const {data, error} = await supabase
+        .from("daycare_nap_checks")
+        .select("id,checked_at,position,breathing,notes,entry_method")
+        .eq("child_id", childId)
+        .gte("checked_at", start)
+        .lt("checked_at", end)
+        .order("checked_at", {ascending:true})
+        .order("id", {ascending:true})
+        .range(offset, offset + 499);
+
+      if (error) throw error;
+
+      records.push(...data);
+
+      if (data.length < 500) break;
+      offset += 500;
+    }
+
+    if (!records.length) {
+      alert("No hay revisiones en este período.");
+      return;
+    }
+
+    const {jsPDF} = await import(
+      "https://esm.sh/jspdf@2.5.2"
+    );
+
+    const doc = new jsPDF();
+    let y = 20;
+
+    function header() {
+      doc.setTextColor(183,110,149);
+      doc.setFontSize(20);
+      doc.text("Little Angels Daycare", 105, 18, {align:"center"});
+
+      doc.setFontSize(10);
+      doc.text("Que el amor sea tu guía", 105, 25, {align:"center"});
+
+      doc.setTextColor(40);
+      doc.setFontSize(14);
+      doc.text("Historial de revisiones de siesta", 15, 38);
+
+      doc.setFontSize(11);
+      doc.text("Niño: " + child.name, 15, 47);
+      doc.text("Período: " + startDay + " al " + endDay, 15, 54);
+
+      y = 66;
+    }
+
+    header();
+
+    for (const r of records) {
+      const date = new Date(r.checked_at);
+
+      const lines = [
+        "Fecha: " + date.toLocaleDateString("en-US"),
+        "Hora: " + formatTime(r.checked_at),
+        "Posición: " + r.position,
+        "Respiración: " + r.breathing,
+        "Registro: " + (r.entry_method === "manual" ? "Manual" : "Hora actual"),
+        "Observaciones: " + (r.notes || "Sin observaciones")
+      ];
+
+      const wrapped = doc.splitTextToSize(lines.join("\n"), 180);
+
+      for (const line of wrapped) {
+        if (y > 275) {
+          doc.addPage();
+          header();
+        }
+
+        doc.text(line, 15, y);
+        y += 5;
+      }
+
+      if (y <= 275) {
+        doc.setDrawColor(210);
+        doc.line(15, y, 195, y);
+      }
+
+      y += 8;
+    }
+
+    const pages = doc.getNumberOfPages();
+
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(9);
+      doc.text("Página " + i + " de " + pages, 105, 288, {align:"center"});
+    }
+
+    doc.save(
+      "Siestas_" + child.name.replace(/[^a-zA-Z0-9À-ÿ_-]/g, "_") +
+      "_" + startDay + "_" + endDay + ".pdf"
+    );
+
+  } catch (error) {
+    alert("No se pudo generar el PDF: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+}; 
 </script>
 </body>
 </html>
