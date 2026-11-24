@@ -1178,69 +1178,118 @@ $("logout").addEventListener("click", () => {
       "https://esm.sh/jspdf@2.5.2"
     );
 
-    const doc = new jsPDF();
-    let y = 20;
+    
+const doc = new jsPDF({
+  orientation: "landscape",
+  unit: "mm",
+  format: "letter"
+});
 
-    function header() {
-      doc.setTextColor(183,110,149);
-      doc.setFontSize(20);
-      doc.text("Little Angels Daycare", 105, 18, {align:"center"});
+const { default: autoTable } = await import(
+  "https://esm.sh/jspdf-autotable@3.8.4"
+);
 
-      doc.setFontSize(10);
-      doc.text("Que el amor sea tu guía", 105, 25, {align:"center"});
+const positions = {
+  "Boca arriba": "On back",
+  "De lado": "On side",
+  "Boca abajo": "On stomach",
+  "Otra / no determinada": "Other / undetermined"
+};
 
-      doc.setTextColor(40);
-      doc.setFontSize(14);
-      doc.text("Historial de revisiones de siesta", 15, 38);
+const breathing = {
+  "Normal": "Normal",
+  "Requiere atención": "Needs attention",
+  "No determinada": "Undetermined"
+};
 
-      doc.setFontSize(11);
-      doc.text("Niño: " + child.name, 15, 47);
-      doc.text("Período: " + startDay + " al " + endDay, 15, 54);
+autoTable(doc, {
+  startY: 36,
+  margin: { top: 36, bottom: 15, left: 10, right: 10 },
+  theme: "grid",
 
-      y = 66;
-    }
+  head: [[
+    "Date",
+    "Time",
+    "Position",
+    "Breathing",
+    "Entry",
+    "Notes"
+  ]],
 
-    header();
+  body: records.map(r => [
+    new Date(r.checked_at).toLocaleDateString("en-US"),
+    new Date(r.checked_at).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit"
+    }),
+    positions[r.position] || r.position || "",
+    breathing[r.breathing] || r.breathing || "",
+    r.entry_method === "automatic"
+      ? "Real-time"
+      : r.entry_method === "manual"
+        ? "Manual"
+        : r.entry_method || "",
+    r.notes || ""
+  ]),
 
-    for (const r of records) {
-      const date = new Date(r.checked_at);
+  styles: {
+    fontSize: 8,
+    cellPadding: 1.5,
+    overflow: "linebreak",
+    lineColor: [210, 210, 210],
+    lineWidth: 0.1
+  },
 
-      const lines = [
-        "Fecha: " + date.toLocaleDateString("en-US"),
-        "Hora: " + formatTime(r.checked_at),
-        "Posición: " + r.position,
-        "Respiración: " + r.breathing,
-        "Registro: " + (r.entry_method === "manual" ? "Manual" : "Hora actual"),
-        "Observaciones: " + (r.notes || "Sin observaciones")
-      ];
+  headStyles: {
+    fillColor: [183, 110, 149],
+    textColor: [255, 255, 255],
+    fontStyle: "bold"
+  },
 
-      const wrapped = doc.splitTextToSize(lines.join("\n"), 180);
+  alternateRowStyles: {
+    fillColor: [252, 243, 248]
+  },
 
-      for (const line of wrapped) {
-        if (y > 275) {
-          doc.addPage();
-          header();
-        }
+  columnStyles: {
+    0: { cellWidth: 27 },
+    1: { cellWidth: 25 },
+    2: { cellWidth: 40 },
+    3: { cellWidth: 35 },
+    4: { cellWidth: 23 },
+    5: { cellWidth: "auto" }
+  },
 
-        doc.text(line, 15, y);
-        y += 5;
-      }
+  didDrawPage: function () {
+    doc.setTextColor(183, 110, 149);
+    doc.setFontSize(18);
+    doc.text("Little Angels Daycare", 139.7, 12, {
+      align: "center"
+    });
 
-      if (y <= 275) {
-        doc.setDrawColor(210);
-        doc.line(15, y, 195, y);
-      }
+    doc.setFontSize(12);
+    doc.setTextColor(40);
+    doc.text("SLEEP CHECK LOG", 139.7, 19, {
+      align: "center"
+    });
 
-      y += 8;
-    }
+    doc.setFontSize(10);
+    doc.text("Child: " + child.name, 10, 27);
+    doc.text("Period: " + startDay + " to " + endDay, 10, 32);
+  }
+});
 
-    const pages = doc.getNumberOfPages();
+const pages = doc.getNumberOfPages();
 
-    for (let i = 1; i <= pages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(9);
-      doc.text("Página " + i + " de " + pages, 105, 288, {align:"center"});
-    }
+for (let i = 1; i <= pages; i++) {
+  doc.setPage(i);
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text("Little Angels Daycare", 10, 208);
+  doc.text("Page " + i + " of " + pages, 269, 208, {
+    align: "right"
+  });
+}
+
 
     doc.save(
       "Siestas_" + child.name.replace(/[^a-zA-Z0-9À-ÿ_-]/g, "_") +
